@@ -26,38 +26,38 @@ class MultiDisplay(mp.Process):
         self.cameras_per_row = cameras_per_row
         self.display_size = display_size
 
-    def run(self):
-        """Displays an image to a window."""
-
-        root = tk.Tk()
+        self.root = tk.Tk()
         xdim = self.display_size[0] * self.cameras_per_row
         ydim = self.display_size[1] * int(
             np.ceil(self.num_cameras / self.cameras_per_row)
         )
-        root.title("Camera view")  # this is the title of the window
-        root.geometry(f"{xdim}x{ydim}")  # this is the size of the window
+        self.root.title("Camera view")  # this is the title of the window
+        self.root.geometry(f"{xdim}x{ydim}")  # this is the size of the window
 
         rowi = 0
-        labels = []
+        self.labels = []
         # create a label to hold the image
         for ci, camera_name in enumerate(self.camera_names):
             # create the camera name label
-            label_text = tk.Label(root, text=camera_name)
+            label_text = tk.Label(self.root, text=camera_name)
             label_text.grid(row=rowi, column=ci % self.cameras_per_row, sticky="nsew")
 
             # create the camerea image label
-            label = tk.Label(root)  # this is where the image will go
+            label = tk.Label(self.root)  # this is where the image will go
             label.grid(row=rowi + 1, column=ci % self.cameras_per_row, sticky="nsew")
 
             if (ci + 1) % self.cameras_per_row == 0:
                 rowi += 2
 
-            labels.append(label)
+            self.labels.append(label)
 
         for i in range(self.cameras_per_row):
-            root.grid_columnconfigure(i, weight=1)
+            self.root.grid_columnconfigure(i, weight=1)
         for i in range(rowi):
-            root.grid_rowconfigure(i, weight=1)
+            self.root.grid_rowconfigure(i, weight=1)
+
+    def run(self):
+        """Displays an image to a window."""
 
         while True:
             quit = False
@@ -83,14 +83,14 @@ class MultiDisplay(mp.Process):
                 img = ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
                 # update label with new image
-                labels[qi].config(image=img)
-                labels[qi].image = img
+                self.labels[qi].config(image=img)
+                self.labels[qi].image = img
 
             if quit:
                 break
             # update tkinter window
-            root.update()
-        root.destroy()
+            self.root.update()
+        self.root.destroy()
 
 
 class Display(mp.Process):

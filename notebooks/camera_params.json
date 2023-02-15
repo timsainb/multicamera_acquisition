@@ -1,0 +1,9 @@
+{
+    "cameras": {
+        "name": "Top", 
+        "serial": 22181547, 
+        "brand": "flir", 
+        "gain": 12, 
+        "display": true
+    }
+}

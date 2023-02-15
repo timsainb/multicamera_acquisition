@@ -59,8 +59,12 @@ def get_camera(
             cam.TriggerMode = "On"
 
         else:
+            cam.AcquisitionMode = "Continuous"
+            cam.TriggerMode = "Off"
+            cam.TriggerSource = "Software"
             cam.LineSelector = "Line2"
             cam.V3_3Enable = True
+            cam.TriggerOverlap = "ReadOut"
 
     if brand == "basler":
         from multicamera_acquisition.interfaces.camera_basler import (

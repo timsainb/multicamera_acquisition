@@ -1,6 +1,7 @@
 from multicamera_acquisition.interfaces.camera_base import BaseCamera, CameraError
 import PySpin
-
+import logging
+import sys
 
 class FlirCamera(BaseCamera):
     def __init__(self, index=0, lock=True, **kwargs):
@@ -25,17 +26,17 @@ class FlirCamera(BaseCamera):
         self.serial_number = index
 
         self.system = PySpin.System.GetInstance()
-        cam_list = self.system.GetCameras()
+        self.cam_list = self.system.GetCameras()
 
-        debug: print("Found %d camera(s)" % cam_list.GetSize())
+        debug: print("Found %d camera(s)" % self.cam_list.GetSize())
 
-        if not cam_list.GetSize():
+        if not self.cam_list.GetSize():
             raise CameraError("No cameras detected.")
         if isinstance(index, int):
-            self.cam = cam_list.GetByIndex(index)
+            self.cam = self.cam_list.GetByIndex(index)
         elif isinstance(index, str):
-            self.cam = cam_list.GetBySerial(index)
-        cam_list.Clear()
+            self.cam = self.cam_list.GetBySerial(index)
+        self.cam_list.Clear()
         self.running = False
 
     _rw_modes = {
@@ -87,8 +88,8 @@ class FlirCamera(BaseCamera):
 
     def stop(self):
         "Stop recording images."
-        if self.running:
-            self.cam.EndAcquisition()
+        #if self.running:
+        self.cam.EndAcquisition()
         self.running = False
 
     def get_image(self, timeout=None):
@@ -105,6 +106,28 @@ class FlirCamera(BaseCamera):
         return self.cam.GetNextImage(
             timeout if timeout else PySpin.EVENT_TIMEOUT_INFINITE
         )
+
+    def close(self):
+        """Close the camera."""
+        logging.info(f"Closing ({self.serial_number})")
+        self.stop()
+        self.cam.DeInit()
+        self.camera_attributes = {}
+        self.camera_methods = {}
+        self.camera_node_types = {}
+        self.initialized = False
+        
+        del self.cam
+        self.cam_list.Clear()
+        # Check the reference count of the camera object
+        #ref_count = sys.getrefcount(self.cam)
+        #logging.info(f"IsStreaming ({self.cam.IsStreaming()})")
+        #logging.info(f"IsInitialized ({self.cam.IsInitialized()})")
+        #print(f"Reference count of the camera object: {ref_count}")
+ 
+        #self.system.ReleaseInstance()
+
+        #sys.exit()
 
     def get_array(self, timeout=None, get_timestamp=False):
         """Get an image from the camera, and convert it to a numpy array.

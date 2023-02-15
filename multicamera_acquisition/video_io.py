@@ -16,7 +16,7 @@ def count_frames(file_name):
 def write_frames(
     filename,
     frames,
-    threads=6,
+    threads=4,
     fps=30,
     crf=10,
     pixel_format="gray8",

@@ -66,6 +66,9 @@ class AcquisitionLoop(mp.Process):
         self.frame_timeout = frame_timeout
         self.display_frames = display_frames
         self.display_frequency = display_frequency
+        self.cam = get_camera(brand=self.brand, **self.camera_params)
+
+
 
     def stop(self):
         self.stopped.set()
@@ -76,16 +79,15 @@ class AcquisitionLoop(mp.Process):
 
     def run(self):
         
-        cam = get_camera(brand=self.brand, **self.camera_params)
         self.ready.set()
         self.primed.wait()
 
-        cam.start()
+        self.cam.start()
         self.ready.set()
         current_frame = 0
         while not self.stopped.is_set():
             try:
-                data = cam.get_array(timeout=self.frame_timeout, get_timestamp=True)
+                data = self.cam.get_array(timeout=self.frame_timeout, get_timestamp=True)
                 if len(data) != 0:
                     data = data + tuple([current_frame])
                 self.write_queue.put(data)
@@ -102,7 +104,7 @@ class AcquisitionLoop(mp.Process):
                     raise e
                 warnings.warn(
                     "Dropped {} frame on #{}: \n{}".format(
-                        current_frame, cam.serial_number, type(e).__name__  # , str(e)
+                        current_frame, self.cam.serial_number, type(e).__name__  # , str(e)
                     )
                 )
             current_frame += 1
@@ -112,8 +114,8 @@ class AcquisitionLoop(mp.Process):
             self.display_queue.put(tuple())
 
         #if cam is not None:
-        cam.close()
-        del cam
+        self.cam.close()
+        del self.cam
 
 
 
@@ -432,3 +434,4 @@ def acquire_video(
             video_file = save_location / f"{name}.{serial_number}.avi"
             print(f"Frames ({name}):", count_frames(video_file.as_posix()))
     
+    return acquisition_loops
